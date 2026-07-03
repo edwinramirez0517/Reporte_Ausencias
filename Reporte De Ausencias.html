@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard Analítico Granular - Grupo AEC</title>
+
+    <!-- Chart.js y Plugin de DataLabels para mostrar los números en los gráficos -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+    <style>
+
+        :root {
+
+            --primary: #E3000F;
+
+            --bg-dark: #121212;
+
+            --bg-card: #1E1E1E;
+
+            --bg-hover: #2D2D2D;
+
+            --text-main: #FFFFFF;
+
+            --text-muted: #B0B0B0;
+
+            --border: #333333;
+
+        }
+
+
+
+        body {
+
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+            background-color: var(--bg-dark);
+
+            color: var(--text-main);
+
+            margin: 0;
+
+            padding: 0;
+
+        }
+
+
+
+        /* Header Adaptable */
+
+        header {
+
+            background-color: var(--bg-card);
+
+            padding: 15px 5%;
+
+            border-bottom: 3px solid var(--primary);
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            flex-wrap: wrap;
+
+            gap: 10px;
+
+        }
+
+
+
+        .brand h1 { margin: 0; color: var(--primary); font-size: 1.8rem; }
+
+        .brand p { margin: 0; color: #FFB6C1; font-style: italic; font-size: 0.8rem; }
+
+        .header-info { text-align: right; }
+
+        .header-info h2 { margin: 0; font-size: 1.1rem; }
+
+
+
+        .container { padding: 20px 5%; max-width: 1400px; margin: 0 auto; }
+
+
+
+        /* Controles de Filtrado (Drill-down) */
+
+        .filter-section {
+
+            background: var(--bg-card);
+
+            padding: 15px;
+
+            border-radius: 8px;
+
+            margin-bottom: 20px;
+
+            display: flex;
+
+            gap: 15px;
+
+            flex-wrap: wrap;
+
+            border: 1px solid var(--border);
+
+        }
+
+        
+
+        .filter-group { flex: 1; min-width: 200px; }
+
+        .filter-group label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: var(--text-muted); }
+
+        .filter-group select {
+
+            width: 100%; padding: 10px; background: var(--bg-dark);
+
+            color: var(--text-main); border: 1px solid var(--border);
+
+            border-radius: 4px; outline: none; font-size: 1rem;
+
+        }
+
+        .filter-group select:focus { border-color: var(--primary); }
+
+
+
+        /* KPIs */
+
+        .kpi-row {
+
+            display: grid;
+
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+
+            gap: 15px;
+
+            margin-bottom: 20px;
+
+        }
+
+        .kpi-card {
+
+            background: var(--bg-card); padding: 15px; border-radius: 8px;
+
+            border-left: 4px solid var(--primary);
+
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+
+        }
+
+        .kpi-card h3 { margin: 0 0 5px 0; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase;}
+
+        .kpi-card .value { font-size: 2rem; font-weight: bold; margin: 0; color: var(--text-main);}
+
+
+
+        /* Gráficos */
+
+        .charts-grid {
+
+            display: grid;
+
+            grid-template-columns: 2fr 1fr;
+
+            gap: 20px;
+
+            margin-bottom: 20px;
+
+        }
+
+        .chart-container {
+
+            background: var(--bg-card); padding: 15px; border-radius: 8px;
+
+            border: 1px solid var(--border); height: 350px; position: relative;
+
+        }
+
+
+
+        /* Tabla de Detalles */
+
+        .table-section {
+
+            background: var(--bg-card); padding: 15px; border-radius: 8px;
+
+            border: 1px solid var(--border); overflow-x: auto;
+
+        }
+
+        .table-section h3 { margin-top: 0; color: var(--primary); }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; min-width: 600px; }
+
+        th { background: var(--bg-dark); color: var(--text-muted); padding: 12px; font-size: 0.9rem; border-bottom: 2px solid var(--primary); }
+
+        td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+
+        tr:hover { background-color: var(--bg-hover); }
+
+        
+
+        .alert-high { color: #FF4444; font-weight: bold; }
+
+        .alert-med { color: #FFBB33; font-weight: bold; }
+
+
+
+        /* Responsividad para móviles */
+
+        @media (max-width: 768px) {
+
+            .charts-grid { grid-template-columns: 1fr; }
+
+            .header-info { text-align: left; margin-top: 10px; }
+
+            .kpi-card .value { font-size: 1.5rem; }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+
+    <header>
+
+        <div class="brand">
+
+            <h1>Compadre</h1>
+
+            <p>En precios y moda, el más padre</p>
+
+        </div>
+
+        <div class="header-info">
+
+            <h2>GRUPO AEC</h2>
+
+            <p style="color: var(--text-muted); margin: 0;">Análisis Granular de Ausencias</p>
+
+        </div>
+
+    </header>
+
+
+
+    <div class="container">
+
+        
+
+        <!-- Controles Maestros -->
+
+        <div class="filter-section">
+
+            <div class="filter-group">
+
+                <label>División / Compañía</label>
+
+                <select id="selDivision" onchange="actualizarDashboard()">
+
+                    <option value="ALL">Todas las Divisiones</option>
+
+                    <option value="CDI-DS">CDI-DS</option>
+
+                    <option value="CEDI-AEC">CEDI-AEC</option>
+
+                    <option value="TIENDAS AEC">TIENDAS AEC</option>
+
+                    <option value="TIENDAS DS">TIENDAS DS</option>
+
+                    <option value="H4">H4</option>
+
+                    <option value="HYC">HYC</option>
+
+                </select>
+
+            </div>
+
+            <div class="filter-group">
+
+                <label>Punto Crítico (Causal)</label>
+
+                <select id="selCausal" onchange="actualizarDashboard()">
+
+                    <option value="ALL">Todas las Causales</option>
+
+                    <option value="Días Libres">Días Libres</option>
+
+                    <option value="AUSENCIA">Ausencias Injustificadas</option>
+
+                    <option value="LLEGADA TARDE">Llegadas Tarde</option>
+
+                    <option value="INCAPACIDAD">Incapacidades (Todas)</option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- Indicadores Clave -->
+
+        <div class="kpi-row">
+
+            <div class="kpi-card"><h3>Total General</h3><p class="value" id="kpiTotal">0</p></div>
+
+            <div class="kpi-card" style="border-color: #FF4444;"><h3>Ausencias Puras</h3><p class="value" id="kpiAusencias" style="color: #FF4444;">0</p></div>
+
+            <div class="kpi-card" style="border-color: #33b5e5;"><h3>Días Libres</h3><p class="value" id="kpiLibres" style="color: #33b5e5;">0</p></div>
+
+            <div class="kpi-card" style="border-color: #FFBB33;"><h3>Llegadas Tarde</h3><p class="value" id="kpiTardes" style="color: #FFBB33;">0</p></div>
+
+        </div>
+
+
+
+        <!-- Gráficos -->
+
+        <div class="charts-grid">
+
+            <div class="chart-container">
+
+                <canvas id="barChart"></canvas>
+
+            </div>
+
+            <div class="chart-container">
+
+                <canvas id="pieChart"></canvas>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- Detalle Tabular -->
+
+        <div class="table-section">
+
+            <h3>Detalle a Nivel Departamento</h3>
+
+            <table id="dataTable">
+
+                <thead>
+
+                    <tr>
+
+                        <th>División</th>
+
+                        <th>Departamento / Tienda</th>
+
+                        <th>Causal Específica</th>
+
+                        <th>Volumen</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="tableBody">
+
+                    <!-- Filas inyectadas por JS -->
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+
+    <script>
+
+        // Registrar el plugin de etiquetas de datos
+
+        Chart.register(ChartDataLabels);
+
+
+
+        // CONFIGURACIÓN GLOBAL DE CHART.JS PARA TEMA OSCURO
+
+        Chart.defaults.color = '#B0B0B0';
+
+        Chart.defaults.font.family = 'Segoe UI';
+
+
+
+        // BASE DE DATOS EXTENDIDA (Muestra representativa de los mayores impactos)
+
+        const bd_ausencias = [
+
+            // CDI-DS
+
+            { div: "CDI-DS", dep: "DEPARTAMENTO DE SEGUNDA", causal: "Días Libres", vol: 47 },
+
+            { div: "CDI-DS", dep: "DEPARTAMENTO DE SEGUNDA", causal: "Días de vacaciones", vol: 15 },
+
+            { div: "CDI-DS", dep: "DEPARTAMENTO DE ALMACEN", causal: "Días Libres", vol: 15 },
+
+            { div: "CDI-DS", dep: "DEPARTAMENTO DE VIÑETEO", causal: "Días Libres", vol: 26 },
+
+            { div: "CDI-DS", dep: "DEPARTAMENTO DE DESPACHO", causal: "Días Libres", vol: 10 },
+
+            // CEDI-AEC
+
+            { div: "CEDI-AEC", dep: "INVENTARIO FISICO", causal: "Días de vacaciones", vol: 20 },
+
+            { div: "CEDI-AEC", dep: "INVENTARIO FISICO", causal: "Días Libres", vol: 15 },
+
+            { div: "CEDI-AEC", dep: "INVENTARIO FISICO", causal: "AUSENCIA", vol: 14 },
+
+            { div: "CEDI-AEC", dep: "DESPACHO", causal: "Días Libres", vol: 28 },
+
+            { div: "CEDI-AEC", dep: "IT", causal: "Días Libres", vol: 19 },
+
+            { div: "CEDI-AEC", dep: "ADMINISTRACION FINANCIERA", causal: "Días Libres", vol: 13 },
+
+            // TIENDAS AEC
+
+            { div: "TIENDAS AEC", dep: "AEC CHOLOMA", causal: "AUSENCIA", vol: 47 },
+
+            { div: "TIENDAS AEC", dep: "AEC CUCUYAGUA", causal: "Días Libres", vol: 76 },
+
+            { div: "TIENDAS AEC", dep: "AEC LA CEIBA", causal: "Días Libres", vol: 71 },
+
+            { div: "TIENDAS AEC", dep: "AEC GUAYMACA", causal: "Días Libres", vol: 44 },
+
+            { div: "TIENDAS AEC", dep: "AEC CAMPAMENTO", causal: "Días Libres", vol: 25 },
+
+            { div: "TIENDAS AEC", dep: "AEC DANDY SPS", causal: "AUSENCIA", vol: 45 },
+
+            { div: "TIENDAS AEC", dep: "AEC GRACIAS LEMPIRA", causal: "Días Libres", vol: 43 },
+
+            // TIENDAS DS
+
+            { div: "TIENDAS DS", dep: "DS SABA", causal: "INCAPACIDAD PRE-NATAL", vol: 35 },
+
+            { div: "TIENDAS DS", dep: "DS SABA", causal: "Días Libres", vol: 22 },
+
+            { div: "TIENDAS DS", dep: "DS SABA", causal: "AUSENCIA", vol: 11 },
+
+            { div: "TIENDAS DS", dep: "DS LEPAERA", causal: "Días Libres", vol: 49 },
+
+            { div: "TIENDAS DS", dep: "DS LEPAERA", causal: "LACTANCIA", vol: 24 },
+
+            { div: "TIENDAS DS", dep: "LA VITRINA TOCOA", causal: "Días Libres", vol: 34 },
+
+            { div: "TIENDAS DS", dep: "LA VITRINA TOCOA", causal: "AUSENCIA", vol: 33 },
+
+            { div: "TIENDAS DS", dep: "LA VITRINA GUAYMACA", causal: "Días Libres", vol: 28 },
+
+            { div: "TIENDAS DS", dep: "DS MEGACARPA", causal: "Días Libres", vol: 31 },
+
+            // H4 & HYC
+
+            { div: "H4", dep: "HOTEL H4 LAS CABAÑAS", causal: "LLEGADA TARDE", vol: 20 },
+
+            { div: "H4", dep: "CASA PLAYA", causal: "Días Libres", vol: 13 },
+
+            { div: "H4", dep: "HOTEL H4 OLANCHITO", causal: "Días Libres", vol: 18 },
+
+            { div: "HYC", dep: "PRODUCCION", causal: "INCAPACIDAD POST-NATAL", vol: 34 }
+
+        ];
+
+
+
+        let barChartInstance = null;
+
+        let pieChartInstance = null;
+
+
+
+        function actualizarDashboard() {
+
+            const fDiv = document.getElementById('selDivision').value;
+
+            const fCausal = document.getElementById('selCausal').value;
+
+
+
+            // 1. Filtrar Datos
+
+            let datosFiltrados = bd_ausencias.filter(d => {
+
+                let matchDiv = (fDiv === "ALL") || (d.div === fDiv);
+
+                let matchCausal = true;
+
+                if (fCausal !== "ALL") {
+
+                    if (fCausal === "INCAPACIDAD") {
+
+                        matchCausal = d.causal.includes("INCAPACIDAD");
+
+                    } else {
+
+                        matchCausal = (d.causal === fCausal);
+
+                    }
+
+                }
+
+                return matchDiv && matchCausal;
+
+            });
+
+
+
+            // 2. Calcular KPIs
+
+            let tGeneral = 0, tAus = 0, tLibres = 0, tTarde = 0;
+
+            datosFiltrados.forEach(d => {
+
+                tGeneral += d.vol;
+
+                if(d.causal === "AUSENCIA") tAus += d.vol;
+
+                if(d.causal === "Días Libres") tLibres += d.vol;
+
+                if(d.causal === "LLEGADA TARDE") tTarde += d.vol;
+
+            });
+
+
+
+            document.getElementById('kpiTotal').innerText = tGeneral;
+
+            document.getElementById('kpiAusencias').innerText = tAus;
+
+            document.getElementById('kpiLibres').innerText = tLibres;
+
+            document.getElementById('kpiTardes').innerText = tTarde;
+
+
+
+            // 3. Renderizar Tabla
+
+            const tbody = document.getElementById('tableBody');
+
+            tbody.innerHTML = '';
+
+            // Ordenar de mayor a menor volumen
+
+            datosFiltrados.sort((a,b) => b.vol - a.vol).forEach(d => {
+
+                let colorClass = '';
+
+                if(d.causal === "AUSENCIA") colorClass = 'alert-high';
+
+                if(d.causal === "LLEGADA TARDE") colorClass = 'alert-med';
+
+                
+
+                tbody.innerHTML += `
+
+                    <tr>
+
+                        <td>${d.div}</td>
+
+                        <td>${d.dep}</td>
+
+                        <td class="${colorClass}">${d.causal}</td>
+
+                        <td><strong>${d.vol}</strong></td>
+
+                    </tr>
+
+                `;
+
+            });
+
+
+
+            // 4. Preparar datos para Gráfico de Barras (Top 7 Departamentos por Volumen)
+
+            let agruparDeptos = {};
+
+            datosFiltrados.forEach(d => {
+
+                let key = d.dep;
+
+                agruparDeptos[key] = (agruparDeptos[key] || 0) + d.vol;
+
+            });
+
+            let arrayDeptos = Object.keys(agruparDeptos).map(k => ({ dep: k, vol: agruparDeptos[k] }));
+
+            arrayDeptos.sort((a,b) => b.vol - a.vol);
+
+            let topDeptos = arrayDeptos.slice(0, 7);
+
+
+
+            // 5. Preparar datos para Gráfico de Anillo (Resumen de Causales)
+
+            let agruparCausales = {};
+
+            datosFiltrados.forEach(d => {
+
+                let key = d.causal.includes('INCAPACIDAD') ? 'Incapacidades' : d.causal;
+
+                agruparCausales[key] = (agruparCausales[key] || 0) + d.vol;
+
+            });
+
+            let arrayCausales = Object.keys(agruparCausales);
+
+            let volsCausales = arrayCausales.map(k => agruparCausales[k]);
+
+
+
+            // 6. Actualizar Gráficos
+
+            renderizarGraficos(
+
+                topDeptos.map(d => d.dep), topDeptos.map(d => d.vol),
+
+                arrayCausales, volsCausales
+
+            );
+
+        }
+
+
+
+        function renderizarGraficos(barLabels, barData, pieLabels, pieData) {
+
+            // Destruir instancias previas si existen
+
+            if(barChartInstance) barChartInstance.destroy();
+
+            if(pieChartInstance) pieChartInstance.destroy();
+
+
+
+            // Configuración común para las etiquetas de datos (Plugin)
+
+            const dataLabelsConfig = {
+
+                color: '#FFF',
+
+                font: { weight: 'bold', size: 12 },
+
+                formatter: Math.round
+
+            };
+
+
+
+            // Gráfico de Barras
+
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+
+            barChartInstance = new Chart(ctxBar, {
+
+                type: 'bar',
+
+                data: {
+
+                    labels: barLabels,
+
+                    datasets: [{
+
+                        label: 'Volumen de Incidencias',
+
+                        data: barData,
+
+                        backgroundColor: '#E3000F',
+
+                        borderRadius: 4
+
+                    }]
+
+                },
+
+                options: {
+
+                    responsive: true, maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: { display: false },
+
+                        title: { display: true, text: 'Top Departamentos Afectados', color: '#FFF', font: {size: 14} },
+
+                        datalabels: { ...dataLabelsConfig, anchor: 'end', align: 'bottom' }
+
+                    },
+
+                    scales: {
+
+                        y: { beginAtZero: true, grid: { color: '#333' } },
+
+                        x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 45, minRotation: 45, font: {size: 10} } }
+
+                    }
+
+                }
+
+            });
+
+
+
+            // Gráfico de Anillo
+
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+
+            pieChartInstance = new Chart(ctxPie, {
+
+                type: 'doughnut',
+
+                data: {
+
+                    labels: pieLabels,
+
+                    datasets: [{
+
+                        data: pieData,
+
+                        backgroundColor: ['#E3000F', '#33b5e5', '#FFBB33', '#aa66cc', '#00C851', '#4B515D'],
+
+                        borderWidth: 1,
+
+                        borderColor: '#1E1E1E'
+
+                    }]
+
+                },
+
+                options: {
+
+                    responsive: true, maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: { position: 'right', labels: { boxWidth: 12, font: {size: 11} } },
+
+                        title: { display: true, text: 'Distribución por Causal', color: '#FFF', font: {size: 14} },
+
+                        datalabels: dataLabelsConfig
+
+                    }
+
+                }
+
+            });
+
+        }
+
+
+
+        // Inicializar el dashboard al cargar la página
+
+        window.onload = actualizarDashboard;
+
+    </script>
+
+</body>
+
+</html>
+
+
+
